@@ -13,7 +13,7 @@ defaults:
   run:
     shell: bash
 jobs:
-  # Rebuild iOS, simulator, Catalyst and macOS only: the pinned OpenSSL bundles lack tvOS/watchOS dependencies.
+  # Rebuild iOS device and Simulator slices only: the pinned OpenSSL bundles lack tvOS/watchOS dependencies.
   build:
     name: Building xcframeworks
     runs-on: macos-26
@@ -39,8 +39,9 @@ jobs:
             echo '| --- | --- | --- |'
             for kind in static dynamic; do
               xcf="xcframeworks/$kind/libssh2.xcframework"
-              plutil -convert json -o - "$xcf/Info.plist" | jq -e '.AvailableLibraries | any(.SupportedPlatform == "ios" and .SupportedPlatformVariant == null)' >/dev/null
-              plutil -convert json -o - "$xcf/Info.plist" | jq -e '.AvailableLibraries | any(.SupportedPlatform == "ios" and .SupportedPlatformVariant == "simulator")' >/dev/null
+              plutil -convert json -o - "$xcf/Info.plist" | jq -e '
+                [.AvailableLibraries[] | {id: .LibraryIdentifier, archs: (.SupportedArchitectures | sort)}] | sort_by(.id) ==
+                [{id: "ios-arm64", archs: ["arm64"]}, {id: "ios-arm64_x86_64-simulator", archs: ["arm64", "x86_64"]}]' >/dev/null
               plutil -convert json -o - "$xcf/Info.plist" | jq -r \
                 '.AvailableLibraries[] | [.LibraryIdentifier, .LibraryPath, (.SupportedArchitectures | sort | join(" "))] | @tsv' \
                 | while IFS=$'\t' read -r slice lib expected; do

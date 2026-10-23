@@ -13,7 +13,7 @@ enum Config {
   
   static let frameworkName = "libssh2"
   
-  static let platforms: [Platform] = [.iPhoneOS, .iPhoneSimulator, .Catalyst, .MacOSX]
+  static let platforms: [Platform] = [.iPhoneOS, .iPhoneSimulator]
 }
 
 extension Platform {
